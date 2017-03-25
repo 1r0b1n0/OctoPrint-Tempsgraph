@@ -42,13 +42,16 @@ $(function() {
         self.temperature_cutoff = self.settingsViewModel.temperature_cutoff;
 
         self.heaterOptions = ko.observable({});
-        self.prevHeaterKeys = [];
+        self.prevHeaterKeys = "";
 
         self._printerProfileInitialized = false;
         self._currentTemperatureDataBacklog = [];
         self._historyTemperatureDataBacklog = [];
 
-        self.g = null; // dygraph
+        self.showFahrenheit = false;
+        self.temperatures = [];
+
+        self.dygraph = null; // dygraph
 
         self._printerProfileUpdated = function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
@@ -56,8 +59,9 @@ $(function() {
             var tools = self.tools();
             var color;
 
-            // reset previous data
-            //self.temperatures = [];
+            self.showFahrenheit = (self.settingsViewModel.settings !== undefined )
+                     ? self.settingsViewModel.settings.appearance.showFahrenheitAlso()
+                     : false;
 
             // tools
             var currentProfileData = self.settingsViewModel.printerProfiles.currentProfileData();
@@ -100,9 +104,18 @@ $(function() {
             self.heaterOptions(heaterOptions);
             self.tools(tools);
 
+            // reset if necessary
+            if(self.prevHeaterKeys != _.keys(self.heaterOptions()).join()) {
+                self.temperatures = [];
+            }
+            self.prevHeaterKeys = _.keys(self.heaterOptions()).join();
+
+
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
             }
+
+            console.log("heater options:" + _.keys(self.heaterOptions()));
 
             // update graph data
             var labels = ["time"];
@@ -119,12 +132,8 @@ $(function() {
                 colors.push(heaterOptions[type].color);
                 colors.push(pusher.color(heaterOptions[type].color).tint(0.5).html());
             }
-            for(var i=0 ; i<typesKeys.length ; i++)
-            {
-                colors
-            }
 
-            self.g.updateOptions( {'file': [initialData], 'labels': labels, 'colors': colors} );
+            self.dygraph.updateOptions( {'file': [initialData], 'labels': labels, 'colors': colors} );
 
 
             self.updatePlot();
@@ -134,8 +143,6 @@ $(function() {
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
-
-        self.temperatures = [];
 
         self.fromCurrentData = function(data) {
             self._processStateData(data.state);
@@ -169,7 +176,7 @@ $(function() {
             self._printerProfileInitialized = true;
 
             // init dygraphs
-            self.g = new Dygraph(
+            self.dygraph = new Dygraph(
               document.getElementById("div_g"),
               [[0,0]],
               {
@@ -177,18 +184,15 @@ $(function() {
                 labelsSeparateLines: true,
                 labelsKMB: true,
                 legend: 'always',
+                hideOverlayOnMouseOut: false,
                 /*colors: ["rgb(51,204,204)",
                          "rgb(255,100,100)",
                          "rgb(255,0,0)",
                          "rgb(255,0,255)",
                          "rgb(255,255,0)"],*/
-                width: 500,
-                height: 400,
+//                width: 500,
+//                height: 400,
                 labels: ['',''],
-                //xlabel: 'Date',
-                //ylabel: 'Temp',
-                //yRangePad: 100,
-                //includeZero: true,
                 valueRange: [0.0, 300],
                 strokeWidth: 4.0,
                 axisLineColor: 'white',
@@ -201,12 +205,11 @@ $(function() {
                   },
                   y: {
                     valueFormatter: function(t) {
-                      return parseFloat(t).toFixed(1) + " °C";
+                      //return parseFloat(t).toFixed(1) + " °C";
+                      return formatTemperature(t, self.showFahrenheit);
                     }
                   }
                 }
-                //showRangeSelector: true
-                // drawXGrid: false
               }
             );
         };
@@ -277,9 +280,6 @@ $(function() {
 
 
         self._processTemperatureData = function(serverTime, data, result) {
-            // result format : [[local_timestamp, tool1_actual, tool1_target, bed_actual, bed_target, ...],]
-            // result format : [[local_timestamp, type[0].actual, type[0].target, type[1].actual, type[1].target, ...],]
-
             var types = _.keys(self.heaterOptions());
             var resultSize = types.length*2 + 1;
             var clientTime = Date.now();
@@ -321,7 +321,7 @@ $(function() {
 
         self.updatePlot = function() {
             console.log("updating")
-            if(!self.g)
+            if(!self.dygraph)
                 return;
 
             var clientTime = Date.now();
@@ -333,33 +333,19 @@ $(function() {
                 for(var i=0;i<els;i++)
                     data.push(0)
 
-                self.g.updateOptions( { 'file': [data] } );
+                self.dygraph.updateOptions( { 'file': [data] } );
             }
             else
             {
-                var data = [];
-/*
-                // we shouldn't use a foreach here : http://jsperf.com/fast-array-foreach
-                for(var i=0, len=self.temperatures.length; i < len ; i++){
-                    var d = self.temperatures[i];
-                    //var time = d[0] - clientTime;
-                    var time = clientTime;
-
-                    tuple = [time]
-                    for (var j = 1; j < d.length; j++) {
-                        tuple.push(d[j])
-                    }
-                    data.push(tuple)
-                }
-                */
-
-                data = self.temperatures;
-
+                var isZoomed = self.dygraph.isZoomed();
                 var oldValueRange = [0, 300];
-                if(self.g.axes_[0] && self.g.axes_[0].computedValueRange)
-                    oldValueRange = self.g.axes_[0].computedValueRange
+                if(self.dygraph.axes_[0] && self.dygraph.axes_[0].computedValueRange)
+                    oldValueRange = self.dygraph.axes_[0].computedValueRange
 
-                self.g.updateOptions( { 'file': data, 'valueRange': oldValueRange } );
+                self.dygraph.updateOptions( { 'file': self.temperatures, 'valueRange': oldValueRange } );
+
+                if(!isZoomed)
+                    self.dygraph.resetZoom();
             }
 
         /*
@@ -401,7 +387,7 @@ $(function() {
                         data: targets
                     });
 
-                    maxTemps.push(self.getMaxTemp(actuals, targets));
+                    maxTemps.push(self.dygraphetMaxTemp(actuals, targets));
                 });
 
                 self.plotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.1;
@@ -412,7 +398,7 @@ $(function() {
 
         };
 
-        self.getMaxTemp = function(actuals, targets) {
+        self.dygraphetMaxTemp = function(actuals, targets) {
             var pair;
             var maxTemp = 0;
             actuals.forEach(function(pair) {
@@ -526,11 +512,10 @@ $(function() {
             if (current != "#tab_plugin_tempsgraph") {
                 return;
             }
-            if(self.g)
+            if(self.dygraph)
             {
-
-                setTimeout($.proxy(function(){self.g.resize()}, this), 0)
-                //$(window).trigger('resize');
+                // if tab was hidden, we need a refresh
+                setTimeout($.proxy(function(){self.dygraph.resize()}, this), 0)
             }
             self.updatePlot();
         };
