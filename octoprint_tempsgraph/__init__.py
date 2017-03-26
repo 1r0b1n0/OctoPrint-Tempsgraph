@@ -28,8 +28,8 @@ class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
         # Define your plugin's asset files to automatically include in the
         # core UI here.
         return dict(
-                        js=["js/tempsgraph.js", "js/dygraph.js"],
-                        css=["css/tempsgraph.css", "css/dygraph.css"]
+                        js=["js/tempsgraph.js", "js/plotly-latest.min.js"],
+                        css=["css/tempsgraph.css"]
 #			less=["less/tempsgraph.less"]
         )
 
