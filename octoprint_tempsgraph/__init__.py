@@ -12,8 +12,7 @@ from __future__ import absolute_import
 import octoprint.plugin
 
 class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
-                       octoprint.plugin.AssetPlugin,
-                       octoprint.plugin.TemplatePlugin):
+                       octoprint.plugin.AssetPlugin):
 
     ##~~ SettingsPlugin mixin
 

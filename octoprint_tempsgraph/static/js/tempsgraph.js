@@ -114,8 +114,6 @@ $(function() {
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
             }
-
-            self.updatePlot();
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
@@ -154,60 +152,90 @@ $(function() {
             self._currentTemperatureDataBacklog = [];
             self._printerProfileInitialized = true;
 
-            self.plot = document.getElementById("div_g");
-            var data = [];
-            var heaterKeys = _.keys(self.heaterOptions())
-            var heaterOptions = self.heaterOptions()
+            var tempDiv = document.getElementById("#temperature-graph");
+            if($("#temperature-graph").length)
+            {
+                $("#temperature-graph").parent().remove();
+                $("#temp").prepend('<div class="row-fluid"><div id="div_g"></div></div>');
 
-            for(var i=0;i<heaterKeys.length;i++) {
-                data.push({
-                    x: [],
-                    y: [],
-                    type: 'scatter',
-                    line: {
-                        width: 8.0,
-                        color: pusher.color(heaterOptions[heaterKeys[i]].color).tint(0.8).html()
-                    },
-                    name: heaterKeys[i]+"_target"
-                });
-                data.push({
-                    x: [],
-                    y: [],
-                    type: 'scatter',
-                    line: {
-                        width: 2.0,
-                        color: heaterOptions[heaterKeys[i]].color
-                    },
-                    name: heaterKeys[i]+"_actual"
-                });
-            }
+                self.plot = document.getElementById("div_g");
+                var data = [];
+                var heaterKeys = _.keys(self.heaterOptions())
+                var heaterOptions = self.heaterOptions()
 
-            for(var i=0,len=0;i<self.temperatures.length;i++) {
-                for(var j=1,len=0;j<self.temperatures[i].length;j++) {
-                    data[j-1].x.push(self.temperatures[i][0]);
-                    data[j-1].y.push(self.temperatures[i][j]);
+                for(var i=0;i<heaterKeys.length;i++) {
+                    data.push({
+                        x: [],
+                        y: [],
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: {
+                            width: 8.0,
+                            color: pusher.color(heaterOptions[heaterKeys[i]].color).tint(0.7).html()
+                        },
+                        name: heaterKeys[i]+"_target"
+                    });
+                    data.push({
+                        x: [],
+                        y: [],
+                        type: 'scatter',
+                        mode: 'lines',
+                        line: {
+                            width: 2.0,
+                            color: heaterOptions[heaterKeys[i]].color
+                        },
+                        name: heaterKeys[i]+"_actual"
+                    });
                 }
-            }
 
-            var layout = {
-              xaxis: {
-                showgrid: false,
-                zeroline: false
-              },
-              yaxis: {
-                showline: false
-              },
-              margin: {
-                l: 30,
-                r: 30,
-                b: 50,
-                t: 30,
-                pad: 4
-              },
-              showlegend: false,
-              //legend: {"orientation": "h", y: 1}
-            };
-            Plotly.plot(self.plot, data, layout);
+                for(var i=0,len=0;i<self.temperatures.length;i++) {
+                    for(var j=1,len=0;j<self.temperatures[i].length;j++) {
+                        data[j-1].x.push(self.temperatures[i][0]);
+                        data[j-1].y.push(self.temperatures[i][j]);
+                    }
+                }
+
+                var layout = {
+                  xaxis: {
+                    showgrid: true,
+                    zeroline: false,
+                    linecolor: 'gray',
+                    linewidth: 1,
+                    mirror: true
+                  },
+                  yaxis: {
+                    range: [0, 300],
+                    linecolor: 'gray',
+                    linewidth: 1,
+                    mirror: true
+                  },
+                    images: [
+                        {
+                          x: 0.5,
+                          y: 1.0,
+                          sizex: 0.8,
+                          sizey: 0.8,
+                          source: "../static/img/graph-background.png",
+                          xanchor: "center",
+                          xref: "paper",
+                          yanchor: "center",
+                          yref: "paper"
+                        }
+                      ],
+                  margin: {
+                    l: 30,
+                    r: 30,
+                    b: 50,
+                    t: 30,
+                    pad: 4
+                  },
+                  //width: 588,
+                  height: 400,
+                  showlegend: false,
+                  //legend: {"orientation": "h", y: 1}
+                };
+                Plotly.plot(self.plot, data, layout);
+            }
 
         };
 
@@ -243,12 +271,10 @@ $(function() {
             if (!CONFIG_TEMPERATURE_GRAPH) return;
 
             self.temperatures = self._processTemperatureData(serverTime, data, self.temperatures);
-            self.updatePlot();
         };
 
         self._processTemperatureHistoryData = function(serverTime, data) {
             self.temperatures = self._processTemperatureData(serverTime, data);
-            self.updatePlot();
         };
 
         self._processOffsetData = function(data) {
@@ -334,11 +360,6 @@ $(function() {
             return result;
         };
 
-
-        self.updatePlot = function() {
-            // plotly.js doesn't need any update
-        };
-
         self.getMaxTemp = function(actuals, targets) {
             var pair;
             var maxTemp = 0;
@@ -355,112 +376,6 @@ $(function() {
             return maxTemp;
         };
 
-        self.setTarget = function(item) {
-            var value = item.newTarget();
-            if (!value) return;
-
-            var onSuccess = function() {
-                item.newTarget("");
-            };
-
-            if (item.key() == "bed") {
-                self._setBedTemperature(value)
-                    .done(onSuccess);
-            } else {
-                self._setToolTemperature(item.key(), value)
-                    .done(onSuccess);
-            }
-        };
-
-        self.setTargetFromProfile = function(item, profile) {
-            if (!profile) return;
-
-            var onSuccess = function() {
-                item.newTarget("");
-            };
-
-            if (item.key() == "bed") {
-                self._setBedTemperature(profile.bed)
-                    .done(onSuccess);
-            } else {
-                self._setToolTemperature(item.key(), profile.extruder)
-                    .done(onSuccess);
-            }
-        };
-
-        self.setTargetToZero = function(item) {
-            var onSuccess = function() {
-                item.newTarget("");
-            };
-
-            if (item.key() == "bed") {
-                self._setBedTemperature(0)
-                    .done(onSuccess);
-            } else {
-                self._setToolTemperature(item.key(), 0)
-                    .done(onSuccess);
-            }
-        };
-
-        self.setOffset = function(item) {
-            var value = item.newOffset();
-            if (!value) return;
-
-            var onSuccess = function() {
-                item.newOffset("");
-            };
-
-            if (item.key() == "bed") {
-                self._setBedOffset(value)
-                    .done(onSuccess);
-            } else {
-                self._setToolOffset(item.key(), value)
-                    .done(onSuccess);
-            }
-        };
-
-        self._setToolTemperature = function(tool, temperature) {
-            var data = {};
-            data[tool] = parseInt(temperature);
-            return OctoPrint.printer.setToolTargetTemperatures(data);
-        };
-
-        self._setToolOffset = function(tool, offset) {
-            var data = {};
-            data[tool] = parseInt(offset);
-            return OctoPrint.printer.setToolTemperatureOffsets(data);
-        };
-
-        self._setBedTemperature = function(temperature) {
-            return OctoPrint.printer.setBedTargetTemperature(parseInt(temperature));
-        };
-
-        self._setBedOffset = function(offset) {
-            return OctoPrint.printer.setBedTemperatureOffset(parseInt(offset));
-        };
-
-        self.handleEnter = function(event, type, item) {
-            if (event.keyCode == 13) {
-                if (type == "target") {
-                    self.setTarget(item);
-                } else if (type == "offset") {
-                    self.setOffset(item);
-                }
-            }
-        };
-
-        self.onAfterTabChange = function(current, previous) {
-            if (current != "#tab_plugin_tempsgraph") {
-                return;
-            }
-            if(self.plot)
-            {
-                // if tab was hidden, we might need a refresh
-                self.updatePlot();
-            }
-
-        };
-
         self.onStartupComplete = function() {
             self._printerProfileUpdated();
         };
@@ -475,7 +390,7 @@ $(function() {
         [ "loginStateViewModel", "settingsViewModel"],
 
         // e.g. #settings_plugin_tempv2, #tab_plugin_tempv2, ...
-        [ "#tab_plugin_tempsgraph" ]
+        []
     ]);
 
 });
