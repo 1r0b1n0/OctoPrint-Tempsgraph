@@ -1,6 +1,16 @@
 # OctoPrint-Tempsgraph
 
-**TODO:** Describe what your plugin does.
+This plugin adds some functionaly to the temperature graph :
+* exact values on hover
+* zooming
+* panning
+* export
+
+## Usage :
+* hover over the graph to show date and temperatures under the cursor
+* drag to zoom
+* shift + drag to pan
+* double click to reset axes / autoscale
 
 ## Setup
 
@@ -9,9 +19,7 @@ or manually using this URL:
 
     https://github.com/1r0b1n0/OctoPrint-Tempsgraph/archive/master.zip
 
-**TODO:** Describe how to install your plugin, if more needs to be done than just installing it via pip or through
-the plugin manager.
-
 ## Configuration
 
-**TODO:** Describe your plugin's configuration options (if any).
+When the plugin is enabled, it will replace the temperature graph.
+In the settings, "Features / Enable temperature graph" must of course be activated.

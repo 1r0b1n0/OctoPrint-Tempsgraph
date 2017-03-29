@@ -2,7 +2,7 @@
  * View model for OctoPrint-tempsgraph
  *
  * Author: Robin
- * License: AGPLv3
+ * License: MIT
  */
 
 $(function() {
@@ -170,7 +170,7 @@ $(function() {
                         type: 'scatter',
                         mode: 'lines',
                         line: {
-                            width: 8.0,
+                            width: 6.0,
                             color: pusher.color(heaterOptions[heaterKeys[i]].color).tint(0.7).html()
                         },
                         name: heaterKeys[i]+"_target"
@@ -204,7 +204,7 @@ $(function() {
                     mirror: true
                   },
                   yaxis: {
-                    range: [0, 300],
+                    range: [0, self.getMaxTemp()],
                     linecolor: 'gray',
                     linewidth: 1,
                     mirror: true
@@ -212,7 +212,7 @@ $(function() {
                     images: [
                         {
                           x: 0.5,
-                          y: 1.0,
+                          y: 0.9,
                           sizex: 0.8,
                           sizey: 0.8,
                           source: "../static/img/graph-background.png",
@@ -232,7 +232,6 @@ $(function() {
                   //width: 588,
                   height: 400,
                   showlegend: false,
-                  //legend: {"orientation": "h", y: 1}
                 };
                 Plotly.plot(self.plot, data, layout);
             }
@@ -325,19 +324,27 @@ $(function() {
                 var timeDiff = (serverTime - d.time) * 1000;
                 var time = Math.round(clientTime - timeDiff);
                 var tuple = [new Date(time)];
+
                 _.each(types, function(type) {
-                    if (!d[type]) return;
-                    tuple.push(d[type].target);
-                    tuple.push(d[type].actual);
+                    if (d[type])
+                    {
+                        tuple.push(d[type].target);
+                        tuple.push(d[type].actual);
+                    }
+                    else
+                    {
+                        tuple.push(NaN);
+                        tuple.push(NaN);
+                    }
                 });
                 if(tuple.length == resultSize)
                 {
                     result.push(tuple);
-                }
 
                 for(var j=1;j<tuple.length;j++) {
                     newData.x[j-1].push(tuple[0]);
                     newData.y[j-1].push(tuple[j]);
+                }
                 }
             }
 
@@ -352,29 +359,29 @@ $(function() {
             }
 
             // update plot
-            if(self.plot)
-            {
-                Plotly.extendTraces(self.plot, newData, [0,1,2,3], result.length)
+            if(self.plot) {
+                var tracesToUpdate = []; // [0,1,2,3,...]
+                for(var i=0;i<newData.x.length;i++) {
+                    tracesToUpdate.push(i);
+                }
+
+                // update layout
+                Plotly.extendTraces(self.plot, newData, tracesToUpdate, result.length)
             }
 
             return result;
         };
 
         self.getMaxTemp = function(actuals, targets) {
-            var pair;
-            var maxTemp = 0;
-            actuals.forEach(function(pair) {
-                if (pair[1] > maxTemp){
-                    maxTemp = pair[1];
+            var maxTemp = 310; // default minimum
+
+            for(var i=0,len=0;i<self.temperatures.length;i++) {
+                for(var j=1,len=0;j<self.temperatures[i].length;j++) {
+                    maxTemp = Math.max(self.temperatures[i][j], maxTemp);
                 }
-            });
-            targets.forEach(function(pair) {
-                if (pair[1] > maxTemp){
-                    maxTemp = pair[1];
-                }
-            });
+            }
             return maxTemp;
-        };
+        }
 
         self.onStartupComplete = function() {
             self._printerProfileUpdated();

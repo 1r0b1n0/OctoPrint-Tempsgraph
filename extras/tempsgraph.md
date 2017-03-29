@@ -3,53 +3,47 @@ layout: plugin
 
 id: tempsgraph
 title: OctoPrint-Tempsgraph
-description: TODO
+description: Replaces the temperature graph with an interactive and zoomable one
 author: Robin Vanhove
-license: AGPLv3
+license: MIT
 
-# TODO
-date: today's date in format YYYY-MM-DD, e.g. 2015-04-21
+date: 2017-03-29
 
 homepage: https://github.com/1r0b1n0/OctoPrint-Tempsgraph
 source: https://github.com/1r0b1n0/OctoPrint-Tempsgraph
 archive: https://github.com/1r0b1n0/OctoPrint-Tempsgraph/archive/master.zip
 
-# TODO set this to true if your plugin uses the dependency_links setup parameter to include
-# library versions not yet published on PyPi. SHOULD ONLY BE USED IF THERE IS NO OTHER OPTION!
 follow_dependency_links: false
 
-# TODO
 tags:
-- a list
-- of tags
-- that apply
-- to your plugin
-- (take a look at the existing plugins for what makes sense here)
+- interactive graph
+- temperature plot
+- zoom
 
 # TODO
 screenshots:
-- url: url of a screenshot
-  alt: alt-text of a screenshot
-  caption: caption of a screenshot
-- url: url of another screenshot
-  alt: alt-text of another screenshot
-  caption: caption of another screenshot
-- ...
+- url: /assets/img/plugins/tempsgraph/hover.png
+  alt: hover
+- url: /assets/img/plugins/tempsgraph/zoom.png
+  alt: zoom
 
 # TODO
-featuredimage: url of a featured image for your plugin
+featuredimage: /assets/img/plugins/tempsgraph/zoom.png
 
 compatibility:
-  # list of compatible versions, for example 1.2.0. If left empty no specific version requirement will be assumed
   octoprint:
-  - 1.2.0
+  - 1.3.2
 
-  # list of compatible operating systems, valid values are linux, windows, macos, leaving empty defaults to all
-  os:
-  - linux
-  - windows
-  - macos
 ---
 
-**TODO**: Longer description of your plugin, configuration examples etc. This part will be visible on the page at
-http://plugins.octoprint.org/plugin/tempsgraph/
+This plugin adds some functionaly to the temperature graph :
+* exact values on hover
+* zooming
+* panning
+* export
+
+## Usage :
+* hover over the graph to show date and temperatures under the cursor
+* drag to zoom
+* shift + drag to pan
+* double click to reset axes / autoscale
