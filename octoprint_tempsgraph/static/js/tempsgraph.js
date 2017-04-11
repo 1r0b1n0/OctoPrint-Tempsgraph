@@ -233,6 +233,16 @@ $(function() {
                   height: 400,
                   showlegend: false,
                 };
+
+                // bufgix for z-index of modbar
+                $("<style>")
+                    .prop("type", "text/css")
+                    .html("\
+                    .js-plotly-plot .plotly .modebar {\
+                        z-index: 999;\
+                    }")
+                    .appendTo("head");
+
                 Plotly.plot(self.plot, data, layout);
             }
 
