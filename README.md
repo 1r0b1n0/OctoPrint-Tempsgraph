@@ -6,6 +6,10 @@ This plugin adds some functionaly to the temperature graph :
 * panning
 * export
 
+![Preview: zoom](/extras/zoom.png)
+![Preview: hover](/extras/hover.png)
+![Preview: dark theme](/extras/dark_theme.png)
+
 ## Usage :
 * hover over the graph to show date and temperatures under the cursor
 * drag to zoom

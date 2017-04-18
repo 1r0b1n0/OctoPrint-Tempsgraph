@@ -152,6 +152,8 @@ $(function() {
             self._currentTemperatureDataBacklog = [];
             self._printerProfileInitialized = true;
 
+            var bodyBgColor = $('body').css('backgroundColor');
+
             var tempDiv = document.getElementById("#temperature-graph");
             if($("#temperature-graph").length)
             {
@@ -209,7 +211,7 @@ $(function() {
                     linewidth: 1,
                     mirror: true
                   },
-                    images: [
+                  images: [
                         {
                           x: 0.5,
                           y: 0.9,
@@ -232,6 +234,10 @@ $(function() {
                   //width: 588,
                   height: 400,
                   showlegend: false,
+                  hovermode: "x",
+                  // dark style support
+                  paper_bgcolor: bodyBgColor,
+                  plot_bgcolor: bodyBgColor,
                 };
 
                 // bufgix for z-index of modbar
