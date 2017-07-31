@@ -236,8 +236,10 @@ $(function() {
                   showlegend: false,
                   hovermode: "x",
                   // dark style support
-                  paper_bgcolor: bodyBgColor,
-                  plot_bgcolor: bodyBgColor,
+                  //paper_bgcolor: bodyBgColor,
+                  //plot_bgcolor: bodyBgColor,
+                  paper_bgcolor: 'rgba(0,0,0,0)',
+                  plot_bgcolor: 'rgba(0,0,0,0)'
                 };
 
                 // bufgix for z-index of modbar

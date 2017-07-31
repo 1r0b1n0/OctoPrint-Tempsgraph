@@ -4,13 +4,16 @@ from __future__ import absolute_import
 import octoprint.plugin
 
 class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
-                       octoprint.plugin.AssetPlugin):
+                       octoprint.plugin.AssetPlugin,
+                       octoprint.plugin.TemplatePlugin):
 
     ##~~ SettingsPlugin mixin
 
     def get_settings_defaults(self):
         return dict(
-            # put your plugin's default settings here
+            transparent_background=True,
+            custom_background_color="#000000",
+            graph_colors = ["red", "orange", "green", "brown", "purple"]
         )
 
     ##~~ AssetPlugin mixin
