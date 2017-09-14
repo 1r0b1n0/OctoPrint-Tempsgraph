@@ -217,7 +217,8 @@ $(function() {
                           y: 0.9,
                           sizex: 0.8,
                           sizey: 0.8,
-                          source: "../static/img/graph-background.png",
+                            // desired custom background file must be placed into source directory 
+                          source: "../static/img/graph-background.png", // e.g."../static/img/CUSTOM-background.png"
                           xanchor: "center",
                           xref: "paper",
                           yanchor: "center",
