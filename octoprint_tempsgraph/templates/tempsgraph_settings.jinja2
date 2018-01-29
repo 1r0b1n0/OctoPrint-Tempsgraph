@@ -26,18 +26,18 @@
             </div>
         </div>
         <div class="control-group">
-            <label class="control-label">Legend (text) color</label>
+            <label class="control-label">Axises text color</label>
             <div class="controls">
-                    <select data-bind="options: legendColors,
+                    <select data-bind="options: axisesColors,
                         optionsText: 'name',
-                        value: selectedLegend,
+                        value: selectedAxises,
                         optionsValue: 'name'"></select>
             </div>
-            <div class="control-group" data-bind="visible: selectedLegend() == 'Custom'">
+            <div class="control-group" data-bind="visible: selectedAxises() == 'Custom'">
             <label class="control-label">Custom color</label>
             <div class="controls">
-                <input type="color" class="input-mini" data-bind="value: legendColor">
-                <input type="text" class="input-mini" data-bind="value: legendColor">
+                <input type="color" class="input-mini" data-bind="value: axisesColor">
+                <input type="text" class="input-mini" data-bind="value: axisesColor">
             </div>
     </fieldset>
 

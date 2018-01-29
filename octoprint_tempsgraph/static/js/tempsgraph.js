@@ -53,12 +53,13 @@ $(function() {
 
         self.plot = null; // dygraph
         
+        self.defaultColors = {
+            background: '#ffffff',
+            axises: '#000000'
+        }
         self.subscriptions = [];
 
         self._printerProfileUpdated = function() {
-            console.log("UPDATE")
-            console.log(self)
-            console.log(self._bound)
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
             var tools = self.tools();
@@ -158,15 +159,14 @@ $(function() {
             self._currentTemperatureDataBacklog = [];
             self._printerProfileInitialized = true;
             
-            var bodyBgColor = $('body').css('backgroundColor');
-            var legendColor = null;
+            var bodyBgColor = self.defaultColors.background = $('body').css('backgroundColor');
+            var axisesColor = self.defaultColors.axises;
             if(self.ownSettings && self.ownSettings.enableCustomization()) {
                 if(self.selectedBackground && self.selectedBackground() != "Default") {
-                    console.log(self.backgroundColor())
                     bodyBgColor = self.backgroundColor();
                 }
-                if(self.selectedLegend && self.selectedLegend() != "Default") {
-                    legendColor = self.legendColor();
+                if(self.selectedBackground && self.selectedAxises() != "Default") {
+                    axisesColor = self.axisesColor();
                 }
             }
             var tempDiv = document.getElementById("#temperature-graph");
@@ -219,14 +219,14 @@ $(function() {
                     linecolor: 'gray',
                     linewidth: 1,
                     mirror: true,
-                    color: legendColor
+                    color: axisesColor
                   },
                   yaxis: {
                     range: [0, self.getMaxTemp()],
                     linecolor: 'gray',
                     linewidth: 1,
                     mirror: true,
-                    color: legendColor
+                    color: axisesColor
                   },
                   images: [
                         {
@@ -418,68 +418,81 @@ $(function() {
         }
 
         self.onStartupComplete = function() {
-            console.log("STARTUP")
             self._printerProfileUpdated();
         };
 
-        self.onChangeBackground = function(val) {
+        self.onChangeBackgroundColor = function(val, useDefault) {
+            var bgColor = useDefault ? self.defaultColors.background : self.backgroundColor();
             var relayout = {
-                paper_bgcolor: self.backgroundColor(),
-                plot_bgcolor: self.backgroundColor()
+                paper_bgcolor: bgColor,
+                plot_bgcolor: bgColor
             }
-            console.log(relayout)
             Plotly.relayout(self.plot, relayout);
         }
 
-        self.onChangeLegend = function() {
+        self.onChangeAxisesColor = function(val, useDefault) {
+            var aColor = useDefault ? self.defaultColors.axises : self.axisesColor();
             var relayout = {
-                'xaxis.color': self.legendColor(),
-                'yaxis.color': self.legendColor()
+                'xaxis.color': aColor,
+                'yaxis.color': aColor
             }
-            console.log(relayout)
             Plotly.relayout(self.plot, relayout);
         }
 
-        self.onChangeSelected = function(val) {
-            self.backgroundColor("test")
+        self.toggleCustomization = function(val) {
+            self.onChangeBackgroundColor(null, !val);
+            self.onChangeAxisesColor(null, !val);
         }
-
+        
         self.onBeforeBinding = function() {
             self.ownSettings = self.settingsViewModel.settings.plugins.tempsgraph;
             self.backgroundColors = self.ownSettings.backgroundPresets;
-            self.legendColors = self.ownSettings.legendPresets;
-            console.log(self.ownSettings)
+            self.axisesColors = self.ownSettings.axisesPresets;
             self.selectedBackground = self.ownSettings.color.backgroundColor;
-            self.selectedLegend = self.ownSettings.color.legendColor;
+            self.selectedAxises = self.ownSettings.color.axisesColor;
             
-            
-            //Observable that returns another observable!
-            self.backgroundColor = ko.computed(function() {
-                return self.ownSettings.backgroundPresets()
+            //Compute backgroundColor from preset and selected.
+            self.backgroundColor = ko.computed({
+                read: function() {
+                    return self.ownSettings.backgroundPresets()
                     .find(function(preset) {
                         return preset.name() == self.selectedBackground();
-                    }).value.extend({ rateLimit: 100});
-            }).extend({ rateLimit: 100, notify: 'always'})().extend({notify: 'always'})
-    
-            self.legendColor = ko.computed(function(val) {
-                console.log(val)
-                return self.ownSettings.legendPresets()
+                    }).value.extend({ rateLimit: 100})()
+                },
+                write: function(val) {
+                    return self.ownSettings.backgroundPresets()
                     .find(function(preset) {
-                        return preset.name() == self.selectedLegend();
-                    }).value;
-            }).extend({ rateLimit: 100, notify: 'always'})();
-    
+                        return preset.name() == self.selectedBackground();
+                    }).value(val);
+                }
+            });
+            //for color as well
+            self.axisesColor = ko.computed({
+                read: function() {
+                    return self.ownSettings.axisesPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedAxises();
+                    }).value();
+                },
+                write: function(val) {
+                    return self.ownSettings.axisesPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedAxises();
+                    }).value(val);
+                }
+            });
         }
-
+        
         self.onSettingsShown = function() {
             //subscribe to handlers
-            self.subscriptions.push(self.selectedBackground.subscribe(self.onChangeSelected),
-                self.selectedLegend.subscribe(self.onChangeSelected),
-                self.backgroundColor.subscribe(self.onChangeBackground), 
-                self.legendColor.subscribe(self.onChangeLegend));
+            self.subscriptions.push(
+                self.backgroundColor.subscribe(self.onChangeBackgroundColor),
+                self.axisesColor.subscribe(self.onChangeAxisesColor),
+                self.ownSettings.enableCustomization.subscribe(self.toggleCustomization));
         }
 
         self.onSettingsHidden = function() {
+            //dispose of them
             self.subscriptions.map(function(elem, i) {
                 elem.dispose();
             });

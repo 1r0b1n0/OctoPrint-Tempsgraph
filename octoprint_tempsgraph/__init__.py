@@ -22,7 +22,7 @@ class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
                 dict(
                     name="Custom",
                     value="#fffff")],
-            legendPresets=[
+            axisesPresets=[
                 dict(
                     name="Default",
                     value=None),
@@ -34,7 +34,7 @@ class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
                     value="#fffff")],
             color=dict(
                 backgroundColor = 'Default',
-                legendColor="Default"
+                axisesColor="Default"
             )
             
         )
