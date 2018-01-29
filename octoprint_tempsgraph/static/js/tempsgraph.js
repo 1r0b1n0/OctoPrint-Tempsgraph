@@ -37,10 +37,10 @@ $(function() {
         self.isError = ko.observable(undefined);
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
-
+       
         self.temperature_profiles = self.settingsViewModel.temperature_profiles;
         self.temperature_cutoff = self.settingsViewModel.temperature_cutoff;
-
+        self.ownSettings = {}
         self.heaterOptions = ko.observable({});
         self.prevHeaterKeys = "";
 
@@ -52,8 +52,13 @@ $(function() {
         self.temperatures = [];
 
         self.plot = null; // dygraph
+        
+        self.subscriptions = [];
 
         self._printerProfileUpdated = function() {
+            console.log("UPDATE")
+            console.log(self)
+            console.log(self._bound)
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
             var tools = self.tools();
@@ -116,7 +121,8 @@ $(function() {
             }
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
-            self._printerProfileUpdated();
+            //Only update if viewModel is bound
+            self._bound && self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
@@ -151,9 +157,18 @@ $(function() {
             self._historyTemperatureDataBacklog = [];
             self._currentTemperatureDataBacklog = [];
             self._printerProfileInitialized = true;
-
+            
             var bodyBgColor = $('body').css('backgroundColor');
-
+            var legendColor = null;
+            if(self.ownSettings && self.ownSettings.enableCustomization()) {
+                if(self.selectedBackground && self.selectedBackground() != "Default") {
+                    console.log(self.backgroundColor())
+                    bodyBgColor = self.backgroundColor();
+                }
+                if(self.selectedLegend && self.selectedLegend() != "Default") {
+                    legendColor = self.legendColor();
+                }
+            }
             var tempDiv = document.getElementById("#temperature-graph");
             if($("#temperature-graph").length)
             {
@@ -203,13 +218,15 @@ $(function() {
                     zeroline: false,
                     linecolor: 'gray',
                     linewidth: 1,
-                    mirror: true
+                    mirror: true,
+                    color: legendColor
                   },
                   yaxis: {
                     range: [0, self.getMaxTemp()],
                     linecolor: 'gray',
                     linewidth: 1,
-                    mirror: true
+                    mirror: true,
+                    color: legendColor
                   },
                   images: [
                         {
@@ -401,9 +418,72 @@ $(function() {
         }
 
         self.onStartupComplete = function() {
+            console.log("STARTUP")
             self._printerProfileUpdated();
         };
 
+        self.onChangeBackground = function(val) {
+            var relayout = {
+                paper_bgcolor: self.backgroundColor(),
+                plot_bgcolor: self.backgroundColor()
+            }
+            console.log(relayout)
+            Plotly.relayout(self.plot, relayout);
+        }
+
+        self.onChangeLegend = function() {
+            var relayout = {
+                'xaxis.color': self.legendColor(),
+                'yaxis.color': self.legendColor()
+            }
+            console.log(relayout)
+            Plotly.relayout(self.plot, relayout);
+        }
+
+        self.onChangeSelected = function(val) {
+            self.backgroundColor("test")
+        }
+
+        self.onBeforeBinding = function() {
+            self.ownSettings = self.settingsViewModel.settings.plugins.tempsgraph;
+            self.backgroundColors = self.ownSettings.backgroundPresets;
+            self.legendColors = self.ownSettings.legendPresets;
+            console.log(self.ownSettings)
+            self.selectedBackground = self.ownSettings.color.backgroundColor;
+            self.selectedLegend = self.ownSettings.color.legendColor;
+            
+            
+            //Observable that returns another observable!
+            self.backgroundColor = ko.computed(function() {
+                return self.ownSettings.backgroundPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedBackground();
+                    }).value.extend({ rateLimit: 100});
+            }).extend({ rateLimit: 100, notify: 'always'})().extend({notify: 'always'})
+    
+            self.legendColor = ko.computed(function(val) {
+                console.log(val)
+                return self.ownSettings.legendPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedLegend();
+                    }).value;
+            }).extend({ rateLimit: 100, notify: 'always'})();
+    
+        }
+
+        self.onSettingsShown = function() {
+            //subscribe to handlers
+            self.subscriptions.push(self.selectedBackground.subscribe(self.onChangeSelected),
+                self.selectedLegend.subscribe(self.onChangeSelected),
+                self.backgroundColor.subscribe(self.onChangeBackground), 
+                self.legendColor.subscribe(self.onChangeLegend));
+        }
+
+        self.onSettingsHidden = function() {
+            self.subscriptions.map(function(elem, i) {
+                elem.dispose();
+            });
+        }
     }
 
     // view model class, parameters for constructor, container to bind to
@@ -414,7 +494,7 @@ $(function() {
         [ "loginStateViewModel", "settingsViewModel"],
 
         // e.g. #settings_plugin_tempv2, #tab_plugin_tempv2, ...
-        []
+        ["#settings_plugin_tempsgraph"]
     ]);
 
 });

@@ -1,0 +1,44 @@
+<form class="form-horizontal">
+    <h4>General</h4>
+    <fieldset>
+        <div class="control-group">
+            <label class="control-label"></label>
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: ownSettings.enableCustomization"> Enable customization
+                </label>
+            </div>
+
+        </div>
+        <div class="control-group">
+            <label class="control-label">Background color</label>
+            <div class="controls">
+                 <select data-bind="options: backgroundColors,
+                       optionsText: 'name',
+                       value: selectedBackground,
+                       optionsValue: 'name'"></select>
+            </div>
+         <div class="control-group" data-bind="visible: selectedBackground() == 'Custom'">
+            <label class="control-label">Custom color</label>
+            <div class="controls">
+                <input type="color" class="input-mini" data-bind="value: backgroundColor">
+                <input type="text" class="input-mini" data-bind="value: backgroundColor">
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">Legend (text) color</label>
+            <div class="controls">
+                    <select data-bind="options: legendColors,
+                        optionsText: 'name',
+                        value: selectedLegend,
+                        optionsValue: 'name'"></select>
+            </div>
+            <div class="control-group" data-bind="visible: selectedLegend() == 'Custom'">
+            <label class="control-label">Custom color</label>
+            <div class="controls">
+                <input type="color" class="input-mini" data-bind="value: legendColor">
+                <input type="text" class="input-mini" data-bind="value: legendColor">
+            </div>
+    </fieldset>
+
+</form>
