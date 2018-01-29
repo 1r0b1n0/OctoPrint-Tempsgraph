@@ -8,7 +8,6 @@
                     <input type="checkbox" data-bind="checked: ownSettings.enableCustomization"> Enable customization
                 </label>
             </div>
-
         </div>
         <div class="control-group">
             <label class="control-label">Background color</label>
@@ -18,12 +17,13 @@
                        value: selectedBackground,
                        optionsValue: 'name'"></select>
             </div>
-         <div class="control-group" data-bind="visible: selectedBackground() == 'Custom'">
-            <label class="control-label">Custom color</label>
-            <div class="controls">
-                <input type="color" class="input-mini" data-bind="value: backgroundColor">
-                <input type="text" class="input-mini" data-bind="value: backgroundColor">
-            </div>
+            <div class="control-group" data-bind="visible: selectedBackground() == 'Custom'">
+                <label class="control-label">Custom color</label>
+                <div class="controls">
+                    <input type="color" class="input-mini" data-bind="value: backgroundColor">
+                    <input type="text" class="input-mini" data-bind="value: backgroundColor">
+                </div>
+             </div>
         </div>
         <div class="control-group">
             <label class="control-label">Axises text color</label>
@@ -39,6 +39,15 @@
                 <input type="color" class="input-mini" data-bind="value: axisesColor">
                 <input type="text" class="input-mini" data-bind="value: axisesColor">
             </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label"></label>
+            <div class="controls">
+                <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: ownSettings.showBackgroundImage"> Show background image
+                </label>
+            </div>
+        </div>
     </fieldset>
 
 </form>

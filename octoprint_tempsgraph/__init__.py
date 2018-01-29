@@ -35,7 +35,8 @@ class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
             color=dict(
                 backgroundColor = 'Default',
                 axisesColor="Default"
-            )
+            ),
+            showBackgroundImage=True
             
         )
 

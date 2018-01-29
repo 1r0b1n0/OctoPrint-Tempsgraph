@@ -51,12 +51,24 @@ $(function() {
         self.showFahrenheit = false;
         self.temperatures = [];
 
-        self.plot = null; // dygraph
+        self.plot = null; // plotly graph
         
         self.defaultColors = {
             background: '#ffffff',
             axises: '#000000'
         }
+        self.defaultImageData = {
+                                  x: 0.5,
+                                  y: 0.9,
+                                  sizex: 0.8,
+                                  sizey: 0.8,
+                                    // desired custom background file must be placed into source directory
+                                  source: "../static/img/graph-background.png", // e.g."../static/img/CUSTOM-background.png"
+                                  xanchor: "center",
+                                  xref: "paper",
+                                  yanchor: "center",
+                                  yref: "paper"
+                                };
         self.subscriptions = [];
 
         self._printerProfileUpdated = function() {
@@ -258,6 +270,15 @@ $(function() {
                   plot_bgcolor: bodyBgColor,
                 };
 
+                if(!self.ownSettings.showBackgroundImage())
+                {
+                    layout['images'] = [];
+                }
+                else
+                {
+                    layout['images'] = [self.defaultImageData];
+                }
+
                 // bufgix for z-index of modbar
                 $("<style>")
                     .prop("type", "text/css")
@@ -439,9 +460,28 @@ $(function() {
             Plotly.relayout(self.plot, relayout);
         }
 
+        self.onShowBackgroundImage = function(val, useDefault) {
+            var relayout;
+            if(!val)
+            {
+                relayout = {
+                    'images': []
+                }
+            }
+            else
+            {
+                relayout = {
+                    images: [self.defaultImageData]
+                }
+            }
+            Plotly.relayout(self.plot, relayout);
+        }
+
+
         self.toggleCustomization = function(val) {
             self.onChangeBackgroundColor(null, !val);
             self.onChangeAxisesColor(null, !val);
+            self.onShowBackgroundImage(null, !val);
         }
         
         self.onBeforeBinding = function() {
@@ -488,6 +528,7 @@ $(function() {
             self.subscriptions.push(
                 self.backgroundColor.subscribe(self.onChangeBackgroundColor),
                 self.axisesColor.subscribe(self.onChangeAxisesColor),
+                self.ownSettings.showBackgroundImage.subscribe(self.onShowBackgroundImage),
                 self.ownSettings.enableCustomization.subscribe(self.toggleCustomization));
         }
 
