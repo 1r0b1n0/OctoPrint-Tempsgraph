@@ -4,13 +4,39 @@ from __future__ import absolute_import
 import octoprint.plugin
 
 class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
-                       octoprint.plugin.AssetPlugin):
+                       octoprint.plugin.AssetPlugin,
+                       octoprint.plugin.TemplatePlugin):
 
     ##~~ SettingsPlugin mixin
 
     def get_settings_defaults(self):
         return dict(
-            # put your plugin's default settings here
+            enableCustomization=False,
+            backgroundPresets=[
+                dict(
+                    name="Default",
+                    value=None),
+                dict(
+                    name="Discorded",
+                    value="#36393f"),
+                dict(
+                    name="Custom",
+                    value="#fffff")],
+            axisesPresets=[
+                dict(
+                    name="Default",
+                    value=None),
+                dict(
+                    name="Discorded",
+                    value="#dadadc"),
+                dict(
+                    name="Custom",
+                    value="#fffff")],
+            color=dict(
+                backgroundColor = 'Default',
+                axisesColor="Default"
+            )
+            
         )
 
     ##~~ AssetPlugin mixin
@@ -45,7 +71,10 @@ class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
                 pip="https://github.com/1r0b1n0/OctoPrint-Tempsgraph/archive/{target_version}.zip"
             )
         )
-
+    def get_template_configs(self):
+        return [
+            dict(type="settings", custom_bindings=True)
+        ]
 
 __plugin_name__ = "Tempsgraph Plugin"
 

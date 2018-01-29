@@ -37,10 +37,10 @@ $(function() {
         self.isError = ko.observable(undefined);
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
-
+       
         self.temperature_profiles = self.settingsViewModel.temperature_profiles;
         self.temperature_cutoff = self.settingsViewModel.temperature_cutoff;
-
+        self.ownSettings = {}
         self.heaterOptions = ko.observable({});
         self.prevHeaterKeys = "";
 
@@ -52,6 +52,12 @@ $(function() {
         self.temperatures = [];
 
         self.plot = null; // dygraph
+        
+        self.defaultColors = {
+            background: '#ffffff',
+            axises: '#000000'
+        }
+        self.subscriptions = [];
 
         self._printerProfileUpdated = function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
@@ -116,7 +122,8 @@ $(function() {
             }
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
-            self._printerProfileUpdated();
+            //Only update if viewModel is bound
+            self._bound && self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
@@ -151,9 +158,17 @@ $(function() {
             self._historyTemperatureDataBacklog = [];
             self._currentTemperatureDataBacklog = [];
             self._printerProfileInitialized = true;
-
-            var bodyBgColor = $('body').css('backgroundColor');
-
+            
+            var bodyBgColor = self.defaultColors.background = $('body').css('backgroundColor');
+            var axisesColor = self.defaultColors.axises;
+            if(self.ownSettings && self.ownSettings.enableCustomization()) {
+                if(self.selectedBackground && self.selectedBackground() != "Default") {
+                    bodyBgColor = self.backgroundColor();
+                }
+                if(self.selectedBackground && self.selectedAxises() != "Default") {
+                    axisesColor = self.axisesColor();
+                }
+            }
             var tempDiv = document.getElementById("#temperature-graph");
             if($("#temperature-graph").length)
             {
@@ -203,13 +218,15 @@ $(function() {
                     zeroline: false,
                     linecolor: 'gray',
                     linewidth: 1,
-                    mirror: true
+                    mirror: true,
+                    color: axisesColor
                   },
                   yaxis: {
                     range: [0, self.getMaxTemp()],
                     linecolor: 'gray',
                     linewidth: 1,
-                    mirror: true
+                    mirror: true,
+                    color: axisesColor
                   },
                   images: [
                         {
@@ -217,7 +234,8 @@ $(function() {
                           y: 0.9,
                           sizex: 0.8,
                           sizey: 0.8,
-                          source: "../static/img/graph-background.png",
+                            // desired custom background file must be placed into source directory 
+                          source: "../static/img/graph-background.png", // e.g."../static/img/CUSTOM-background.png"
                           xanchor: "center",
                           xref: "paper",
                           yanchor: "center",
@@ -403,6 +421,82 @@ $(function() {
             self._printerProfileUpdated();
         };
 
+        self.onChangeBackgroundColor = function(val, useDefault) {
+            var bgColor = useDefault ? self.defaultColors.background : self.backgroundColor();
+            var relayout = {
+                paper_bgcolor: bgColor,
+                plot_bgcolor: bgColor
+            }
+            Plotly.relayout(self.plot, relayout);
+        }
+
+        self.onChangeAxisesColor = function(val, useDefault) {
+            var aColor = useDefault ? self.defaultColors.axises : self.axisesColor();
+            var relayout = {
+                'xaxis.color': aColor,
+                'yaxis.color': aColor
+            }
+            Plotly.relayout(self.plot, relayout);
+        }
+
+        self.toggleCustomization = function(val) {
+            self.onChangeBackgroundColor(null, !val);
+            self.onChangeAxisesColor(null, !val);
+        }
+        
+        self.onBeforeBinding = function() {
+            self.ownSettings = self.settingsViewModel.settings.plugins.tempsgraph;
+            self.backgroundColors = self.ownSettings.backgroundPresets;
+            self.axisesColors = self.ownSettings.axisesPresets;
+            self.selectedBackground = self.ownSettings.color.backgroundColor;
+            self.selectedAxises = self.ownSettings.color.axisesColor;
+            
+            //Compute backgroundColor from preset and selected.
+            self.backgroundColor = ko.computed({
+                read: function() {
+                    return self.ownSettings.backgroundPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedBackground();
+                    }).value.extend({ rateLimit: 100})()
+                },
+                write: function(val) {
+                    return self.ownSettings.backgroundPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedBackground();
+                    }).value(val);
+                }
+            });
+            //for color as well
+            self.axisesColor = ko.computed({
+                read: function() {
+                    return self.ownSettings.axisesPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedAxises();
+                    }).value();
+                },
+                write: function(val) {
+                    return self.ownSettings.axisesPresets()
+                    .find(function(preset) {
+                        return preset.name() == self.selectedAxises();
+                    }).value(val);
+                }
+            });
+        }
+        
+        self.onSettingsShown = function() {
+            //subscribe to handlers
+            self.subscriptions.push(
+                self.backgroundColor.subscribe(self.onChangeBackgroundColor),
+                self.axisesColor.subscribe(self.onChangeAxisesColor),
+                self.ownSettings.enableCustomization.subscribe(self.toggleCustomization));
+        }
+
+        self.onSettingsHidden = function() {
+            //dispose of them
+            self.subscriptions.map(function(elem, i) {
+                elem.dispose();
+            });
+        }
     }
 
     // view model class, parameters for constructor, container to bind to
@@ -413,7 +507,7 @@ $(function() {
         [ "loginStateViewModel", "settingsViewModel"],
 
         // e.g. #settings_plugin_tempv2, #tab_plugin_tempv2, ...
-        []
+        ["#settings_plugin_tempsgraph"]
     ]);
 
 });
