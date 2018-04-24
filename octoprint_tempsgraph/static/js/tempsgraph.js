@@ -173,14 +173,12 @@ $(function() {
             
             var bodyBgColor = self.defaultColors.background = $('body').css('backgroundColor');
             var axisesColor = self.defaultColors.axises;
-            if(self.ownSettings && self.ownSettings.enableCustomization()) {
-                if(self.selectedBackground && self.selectedBackground() != "Default") {
-                    bodyBgColor = self.backgroundColor();
-                }
-                if(self.selectedBackground && self.selectedAxises() != "Default") {
-                    axisesColor = self.axisesColor();
-                }
+            if(self.selectedBackground && self.selectedBackground() != "Default") {
+                bodyBgColor = self.backgroundColor();
             }
+            if(self.selectedAxises && self.selectedAxises() != "Default") {
+                axisesColor = self.axisesColor();
+                }
             var tempDiv = document.getElementById("#temperature-graph");
             if($("#temperature-graph").length)
             {
@@ -314,6 +312,9 @@ $(function() {
                 if (lastData.hasOwnProperty("tool" + i)) {
                     tools[i]["actual"](lastData["tool" + i].actual);
                     tools[i]["target"](lastData["tool" + i].target);
+                } else {
+                    tools[i]["actual"](0);
+                    tools[i]["target"](0);
                 }
             }
 
@@ -476,13 +477,6 @@ $(function() {
             }
             Plotly.relayout(self.plot, relayout);
         }
-
-
-        self.toggleCustomization = function(val) {
-            self.onChangeBackgroundColor(null, !val);
-            self.onChangeAxisesColor(null, !val);
-            self.onShowBackgroundImage(null, !val);
-        }
         
         self.onBeforeBinding = function() {
             self.ownSettings = self.settingsViewModel.settings.plugins.tempsgraph;
@@ -528,8 +522,7 @@ $(function() {
             self.subscriptions.push(
                 self.backgroundColor.subscribe(self.onChangeBackgroundColor),
                 self.axisesColor.subscribe(self.onChangeAxisesColor),
-                self.ownSettings.showBackgroundImage.subscribe(self.onShowBackgroundImage),
-                self.ownSettings.enableCustomization.subscribe(self.toggleCustomization));
+                self.ownSettings.showBackgroundImage.subscribe(self.onShowBackgroundImage));
         }
 
         self.onSettingsHidden = function() {
@@ -541,15 +534,11 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    OCTOPRINT_VIEWMODELS.push([
-        TempsgraphViewModel,
-
-        // e.g. loginStateViewModel, settingsViewModel, ...
-        [ "loginStateViewModel", "settingsViewModel"],
-
-        // e.g. #settings_plugin_tempv2, #tab_plugin_tempv2, ...
-        ["#settings_plugin_tempsgraph"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: TempsgraphViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#settings_plugin_tempsgraph"]
+    });
 
 });
 
