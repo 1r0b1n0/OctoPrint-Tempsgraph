@@ -35,8 +35,8 @@ class TempsgraphPlugin(octoprint.plugin.SettingsPlugin,
                 backgroundColor = 'Default',
                 axisesColor="Default"
             ),
-            showBackgroundImage=True
-            
+            showBackgroundImage=True,
+            startWithAutoScale=False
         )
 
     ##~~ AssetPlugin mixin

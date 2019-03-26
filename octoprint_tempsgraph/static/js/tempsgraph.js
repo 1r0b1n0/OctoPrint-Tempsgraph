@@ -277,6 +277,16 @@ $(function() {
                     layout['images'] = [self.defaultImageData];
                 }
 
+                if (!self.ownSettings.startWithAutoScale())
+                {
+                    layout['yaxis']['autorange'] = false;
+                    layout['yaxis']['range'] = [0, self.getMaxTemp()];
+                }
+                else
+                {
+                    layout['yaxis']['autorange'] = true;
+                }
+
                 // bufgix for z-index of modbar
                 $("<style>")
                     .prop("type", "text/css")
@@ -477,14 +487,25 @@ $(function() {
             }
             Plotly.relayout(self.plot, relayout);
         }
-        
+
+        self.onStartWithAutoScale = function(val, useDefault) {
+            var relayout = {
+                'yaxis.autorange': val
+            };
+            if (!self.ownSettings.startWithAutoScale())
+            {
+                relayout['yaxis.range'] = [0, self.getMaxTemp()];
+            }
+            Plotly.relayout(self.plot, relayout);
+        }
+
         self.onBeforeBinding = function() {
             self.ownSettings = self.settingsViewModel.settings.plugins.tempsgraph;
             self.backgroundColors = self.ownSettings.backgroundPresets;
             self.axisesColors = self.ownSettings.axisesPresets;
             self.selectedBackground = self.ownSettings.color.backgroundColor;
             self.selectedAxises = self.ownSettings.color.axisesColor;
-            
+
             //Compute backgroundColor from preset and selected.
             self.backgroundColor = ko.computed({
                 read: function() {
@@ -522,6 +543,7 @@ $(function() {
             self.subscriptions.push(
                 self.backgroundColor.subscribe(self.onChangeBackgroundColor),
                 self.axisesColor.subscribe(self.onChangeAxisesColor),
+                self.ownSettings.startWithAutoScale.subscribe(self.onStartWithAutoScale),
                 self.ownSettings.showBackgroundImage.subscribe(self.onShowBackgroundImage));
         }
 
