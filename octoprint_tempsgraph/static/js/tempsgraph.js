@@ -18,9 +18,7 @@ $(function() {
                 key: ko.observable(),
                 actual: ko.observable(0),
                 target: ko.observable(0),
-                offset: ko.observable(0),
                 newTarget: ko.observable(),
-                newOffset: ko.observable()
             }
         };
 
@@ -29,6 +27,11 @@ $(function() {
         self.bedTemp = self._createToolEntry();
         self.bedTemp["name"](gettext("Bed"));
         self.bedTemp["key"]("bed");
+
+        self.hasChamber = ko.observable(false);
+        self.chamberTemp = self._createToolEntry();
+        self.chamberTemp["name"](gettext("Chamber"));
+        self.chamberTemp["key"]("chamber");
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -72,7 +75,7 @@ $(function() {
         self.subscriptions = [];
 
         self._printerProfileUpdated = function() {
-            var graphColors = ["red", "orange", "green", "brown", "purple"];
+            var graphColors = ["red", "orange", "green", "brown", "purple", "fuchsia"];
             var heaterOptions = {};
             var tools = self.tools();
             var color;
@@ -106,7 +109,7 @@ $(function() {
                 if (tools.length < 1 || !tools[0]) {
                     tools[0] = self._createToolEntry();
                 }
-                tools[0]["name"](gettext("Hotend"));
+                tools[0]["name"](gettext("Tool"));
                 tools[0]["key"]("tool0");
             }
 
@@ -116,6 +119,13 @@ $(function() {
                 heaterOptions["bed"] = {name: gettext("Bed"), color: "blue"};
             } else {
                 self.hasBed(false);
+            }
+
+            if (currentProfileData && currentProfileData.heatedChamber()) {
+                self.hasChamber(true);
+                heaterOptions["chamber"] = {name: gettext("Chamber"), color: "black"};
+            } else {
+                self.hasChamber(false);
             }
 
             // write back
@@ -137,7 +147,9 @@ $(function() {
             //Only update if viewModel is bound
             self._bound && self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
+            self.settingsViewModel.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
+            self.settingsViewModel.printerProfiles.currentProfileData().heatedChamber.subscribe(self._printerProfileUpdated);
         });
 
         self.fromCurrentData = function(data) {
@@ -147,7 +159,6 @@ $(function() {
             } else {
                 self._processTemperatureUpdateData(data.serverTime, data.temps);
             }
-            self._processOffsetData(data.offsets);
         };
 
         self.fromHistoryData = function(data) {
@@ -157,7 +168,6 @@ $(function() {
             } else {
                 self._processTemperatureHistoryData(data.serverTime, data.temps);
             }
-            self._processOffsetData(data.offsets);
         };
 
         self._triggerBacklog = function() {
@@ -333,6 +343,11 @@ $(function() {
                 self.bedTemp["target"](lastData.bed.target);
             }
 
+            if (lastData.hasOwnProperty("chamber")) {
+                self.chamberTemp["actual"](lastData.chamber.actual);
+                self.chamberTemp["target"](lastData.chamber.target);
+            }
+
             if (!CONFIG_TEMPERATURE_GRAPH) return;
 
             self.temperatures = self._processTemperatureData(serverTime, data, self.temperatures);
@@ -340,19 +355,6 @@ $(function() {
 
         self._processTemperatureHistoryData = function(serverTime, data) {
             self.temperatures = self._processTemperatureData(serverTime, data);
-        };
-
-        self._processOffsetData = function(data) {
-            var tools = self.tools();
-            for (var i = 0; i < tools.length; i++) {
-                if (data.hasOwnProperty("tool" + i)) {
-                    tools[i]["offset"](data["tool" + i]);
-                }
-            }
-
-            if (data.hasOwnProperty("bed")) {
-                self.bedTemp["offset"](data["bed"]);
-            }
         };
 
         function arraysEqual(arr1, arr2) {
