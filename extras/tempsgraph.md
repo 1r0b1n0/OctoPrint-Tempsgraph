@@ -33,6 +33,7 @@ featuredimage: /assets/img/plugins/tempsgraph/zoom.png
 compatibility:
   octoprint:
   - 1.3.2
+  python: ">=2.7,<4"
 
 ---
 
