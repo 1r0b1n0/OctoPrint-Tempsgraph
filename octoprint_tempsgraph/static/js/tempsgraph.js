@@ -65,7 +65,7 @@ $(function() {
                                   y: 0.9,
                                   sizex: 0.8,
                                   sizey: 0.8,
-                                    // desired custom background file must be placed into source directory
+                                  // desired custom background file must be placed into source directory
                                   source: "../static/img/graph-background.png", // e.g."../static/img/CUSTOM-background.png"
                                   xanchor: "center",
                                   xref: "paper",
@@ -138,7 +138,6 @@ $(function() {
             }
             self.prevHeaterKeys = _.keys(self.heaterOptions()).join();
 
-
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
             }
@@ -146,10 +145,13 @@ $(function() {
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             //Only update if viewModel is bound
             self._bound && self._printerProfileUpdated();
+            // disabled because we don't yet support dynamic changes of these parameters
+            /*
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedChamber.subscribe(self._printerProfileUpdated);
+            */
         });
 
         self.fromCurrentData = function(data) {
@@ -254,7 +256,7 @@ $(function() {
                           y: 0.9,
                           sizex: 0.8,
                           sizey: 0.8,
-                            // desired custom background file must be placed into source directory 
+                          // desired custom background file must be placed into source directory
                           source: "../static/img/graph-background.png", // e.g."../static/img/CUSTOM-background.png"
                           xanchor: "center",
                           xref: "paper",
@@ -445,14 +447,19 @@ $(function() {
 
             for(var i=0,len=0;i<self.temperatures.length;i++) {
                 for(var j=1,len=0;j<self.temperatures[i].length;j++) {
-                    maxTemp = Math.max(self.temperatures[i][j], maxTemp);
+                    let t = self.temperatures[i][j];
+                    if(Number.isFinite(t))
+                    {
+                        maxTemp = Math.max(t, maxTemp);
+                    }
                 }
             }
             return maxTemp;
         }
 
         self.onStartupComplete = function() {
-            self._printerProfileUpdated();
+            // we can't init yet because since octoprint 1.4.0 the correct number of tools is not yet available
+            //self._printerProfileUpdated();
         };
 
         self.onChangeBackgroundColor = function(val, useDefault) {
