@@ -195,7 +195,9 @@ $(function() {
             if($("#temperature-graph").length)
             {
                 $("#temperature-graph").parent().remove();
-                $("#temp").prepend('<div class="row-fluid"><div id="div_g"></div></div>');
+                const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
+                var div_g_height = (vh - 120 - 220);
+                $("#temp").prepend('<div class="row-fluid"><div id="div_g" style="max-height:'+div_g_height+'px"></div></div>');
 
                 self.plot = document.getElementById("div_g");
                 var data = [];
@@ -241,14 +243,29 @@ $(function() {
                     linecolor: 'gray',
                     linewidth: 1,
                     mirror: true,
-                    color: axisesColor
+                    color: axisesColor,
+                    showspikes: true,
+                    spikethickness: 1,
+                    spikedash: 'dot',
+                    spikemode: 'across',
+                    spikesnap: 'data',
+                    rangeslider: {
+                      thickness: 0.17,
+                      borderwidth: 0,
+                    },
                   },
                   yaxis: {
                     range: [0, self.getMaxTemp()],
                     linecolor: 'gray',
                     linewidth: 1,
                     mirror: true,
-                    color: axisesColor
+                    color: axisesColor,
+                    showspikes: true,
+                    spikethickness: 1,
+                    spikedash: 'dot',
+                    spikemode: 'across',
+                    spikesnap: 'data',
+                    automargin: false,
                   },
                   images: [
                         {
@@ -269,15 +286,22 @@ $(function() {
                     r: 30,
                     b: 50,
                     t: 30,
-                    pad: 4
+                    pad: 4,
+                    autoexpand: false
                   },
                   //width: 588,
-                  height: 400,
+                  //height: 400,
+                  autosize: true,
                   showlegend: false,
                   hovermode: "x",
                   // dark style support
                   paper_bgcolor: bodyBgColor,
                   plot_bgcolor: bodyBgColor,
+                  dragmode: 'zoom',
+                  hovermode: 'x',
+                  hoverdistance: 1000,
+                  spikedistance: -1,
+                  
                 };
 
                 if(!self.ownSettings.showBackgroundImage())
@@ -307,8 +331,18 @@ $(function() {
                         z-index: 999;\
                     }")
                     .appendTo("head");
-
-                Plotly.plot(self.plot, data, layout);
+				
+                // Workaround for plotly behaviour (Cannot autosize to invisible object)
+                // Temporarily display background tab
+                self.plot.parentElement.parentElement.style.opacity="0";
+                self.plot.parentElement.parentElement.style.display="block";
+                // Before drawing the plot
+                Plotly.plot(self.plot, data, layout, {responsive: true } );
+                // Then restore the previous state
+                self.plot.parentElement.parentElement.style.display="";
+                self.plot.parentElement.parentElement.style.opacity="";
+				
+                
             }
 
         };
